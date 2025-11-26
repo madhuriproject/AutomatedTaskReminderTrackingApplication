@@ -78,4 +78,8 @@ public class SchedulerService {
             System.out.println("No reminder email for task: " + fresh.getId());
         }
     }
+    public void sendInstantEmail(String to, String subject, String body) {
+        emailService.sendSimpleMail(to, subject, body);
+    }
+
 }

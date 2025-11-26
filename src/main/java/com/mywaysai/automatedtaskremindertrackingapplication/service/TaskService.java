@@ -14,18 +14,66 @@ public class TaskService {
 
     private final TaskRepository repo;
     private final SchedulerService schedulerService;
+    private final EmailService emailService;   // ✅ Added
 
-    public TaskService(TaskRepository repo, SchedulerService schedulerService) {
+    // ✅ Updated constructor with EmailService
+    public TaskService(TaskRepository repo, SchedulerService schedulerService, EmailService emailService) {
         this.repo = repo;
         this.schedulerService = schedulerService;
+        this.emailService = emailService;
     }
+ // ✅ Added
 
     public Task addTask(Task t) {
         Task saved = repo.save(t);
-        // schedule reminder
+
+        // 1️⃣ Send instant email
+        if (saved.getReminderEmail() != null && !saved.getReminderEmail().isBlank()) {
+            
+            String subject = "Task Created: " + saved.getTitle();
+            String body = "Your task has been created.\n\n" +
+                    "Title: " + saved.getTitle() + "\n" +
+                    "Description: " + saved.getDescription() + "\n" +
+                    "Due Date: " + saved.getDueDate() + "\n" +
+                    "Reminder Before: " + saved.getReminderMinutesBefore() + " mins";
+
+            // 🔥 DIRECT email service call — cleaner
+            emailService.sendSimpleMail(saved.getReminderEmail(), subject, body);
+        }
+
+        // 2️⃣ Schedule future reminder
         schedulerService.scheduleReminderForTask(saved);
+
         return saved;
     }
+//    public Task addTask(Task t) {
+//        Task saved = repo.save(t);
+//        // schedule reminder
+//        schedulerService.scheduleReminderForTask(saved);
+//        return saved;
+//    }
+//
+//    public Task addTask(Task t) {
+//        Task saved = repo.save(t);
+//
+//        // 1️⃣ Send email immediately
+//        if (saved.getReminderEmail() != null && !saved.getReminderEmail().isBlank()) {
+//            String subject = "Task Created: " + saved.getTitle();
+//            String body = "Your task has been created.\n\n" +
+//                          "Title: " + saved.getTitle() + "\n" +
+//                          "Description: " + saved.getDescription() + "\n" +
+//                          "Due Date: " + saved.getDueDate() + "\n" +
+//                          "Reminder Before: " + saved.getReminderMinutesBefore() + " mins";
+//
+//            // send instant mail
+//            schedulerService.sendInstantEmail(saved.getReminderEmail(), subject, body);
+//        }
+//
+//        // 2️⃣ Also schedule future reminder
+//        schedulerService.scheduleReminderForTask(saved);
+//
+//        return saved;
+//    }
 
     public List<Task> listAll() {
         return repo.findAll();
